@@ -108,3 +108,11 @@ These are not suggestions. They are hard rules for this project.
   - Subtle game logic bugs that require deep reasoning
   - Any task where Sonnet has already tried and failed
 - When recommending Opus, say clearly: **"⚠️ This task may need Opus — consider switching with /model"**
+
+---
+
+## WORKFLOW PREFERENCE
+
+- **Bug fixes: Just do it.** Don't ask permission for fixes — fix it, commit, and report what changed. If it breaks, we roll back.
+- **Always commit before and after changes** so every version is recoverable via git history.
+- **Keep the user focused.** User has ADHD — reel them back to the current task when they drift. State clearly what the next step is.

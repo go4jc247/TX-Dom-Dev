@@ -126,3 +126,10 @@ These are not suggestions. They are hard rules for this project.
 - User has original high-quality source files
 - When ready: replace compressed files with originals, no HTML changes needed
 - Status: **On hold**
+
+### JS Module Split (v14.0.0 candidate)
+- Split game.js (~27,000 lines) into ES Modules by feature section
+- Suggested sections: game-core, multiplayer, audio, ui, ai, moon-mode, scoring, settings
+- Requires adding import/export to all shared globals — major refactor
+- Benefits: smaller files, easier editing, significant token savings per session
+- Status: **On hold — tackle as v14.0.0 planned rewrite**

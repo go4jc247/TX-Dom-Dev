@@ -3,6 +3,8 @@
 // Extracted from index.html v13.3.0
 // ============================================================
 
+const GAME_VERSION = 'v13.5.0'; // Update each release — used by splash & about screens
+
 // ============================================================
 // Lazy Load Helper — loads JS modules on demand
 // ============================================================
@@ -10550,7 +10552,7 @@ document.querySelectorAll('.mpMarksBtn').forEach(btn => {
 
 document.getElementById('menuAbout').addEventListener('click', () => {
   document.getElementById('settingsMenu').classList.remove('open');
-  document.getElementById('aboutVersion').textContent = MP_VERSION;
+  document.getElementById('aboutVersion').textContent = (typeof GAME_VERSION !== 'undefined') ? GAME_VERSION : (typeof MP_VERSION !== 'undefined') ? MP_VERSION : '';
   document.getElementById('aboutBackdrop').style.display = 'flex';
 });
 document.getElementById('aboutCloseBtn').addEventListener('click', () => {
@@ -11463,7 +11465,7 @@ window.addEventListener('resize', detectScreenSize);
   if(!splash) return;
   // Populate version text dynamically from MP_VERSION
   var sv = document.getElementById('splashVersion');
-  if(sv) sv.textContent = (typeof MP_VERSION !== 'undefined') ? MP_VERSION : '';
+  if(sv) sv.textContent = (typeof GAME_VERSION !== 'undefined') ? GAME_VERSION : '';
   var fill = document.getElementById('splashLoadingFill');
   var progress = 0;
   var interval = setInterval(function(){

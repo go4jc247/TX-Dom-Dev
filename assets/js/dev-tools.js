@@ -2081,11 +2081,5 @@ var BUILTIN_DEVICE_PRESETS = {
 // Show start screen on load
 showStartScreen();
 
-// Service Worker registration for offline support
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js', { scope: './' })
-      .catch(() => {});
-  });
-}
+// Service Worker registration moved to index.html (always loads, not lazy)
 

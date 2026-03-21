@@ -28,7 +28,13 @@
   document.head.appendChild(link);
 })();
 </script>
-
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js', { scope: './' });
+  });
+}
+</script>
 
 <div id="viewportWrapper">
 <div id="gameWrapper">

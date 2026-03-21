@@ -9364,7 +9364,16 @@ async function startNewHand(){
   _aiActionInProgress = false; // FIX3: Reset AI action lock
   _clearAllAITimers();         // FIX5: Clear all AI timers
   console.log('[FIX] All sync flags reset for new hand');
-  
+
+  // Reset hand-scoped house rule flags (nello_doubles_suit not reset by new_hand_random)
+  nelloDoublesSuitActive = false;
+  _dfmActiveThisHand = false;
+  _dfmChoiceMade = false;
+  if(session && session.game){
+    session.game.nello_doubles_suit = false;
+    session.game.force_double_trump = false;
+  }
+
   _staleRefreshCount = 0; // V10_118: Reset refresh counter for new hand
   // Hide boneyard 2 overlay when new hand starts
   if(boneyard2Visible){

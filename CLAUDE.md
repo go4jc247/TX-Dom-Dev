@@ -79,22 +79,23 @@ These are not suggestions. They are hard rules for this project.
 
 ## PROJECT CONTEXT
 
-- **Game:** Texas 42 / TN51 Dominoes — HTML5 single-file game
+- **Game:** Texas 42 / TN51 Dominoes — HTML5 web game (multi-file, modular)
 - **Base file:** Started from `Texas Dominoes V12.10.27c 2.html` (clean, no Easter egg)
-- **Current version:** v13.0.0
+- **Current version:** v13.5.1 (MP_VERSION in multiplayer.js, CACHE_NAME in sw.js)
 - **Live URL:** https://go4jc247.github.io/TX-Dom-Dev/
+- **PWA:** Installable as standalone app (manifest.json + sw.js)
 - **Dev branch:** main
-- **Live branch:** gh-pages
+- **Live branch:** gh-pages (merge from main, never commit directly)
 - **Relay server:** wss://tn51-tx42-relay.onrender.com
-- **User uses text-to-speech** — expect typos, decipher intent, ask if unclear
+- **User uses voice-to-text** — expect typos, decipher intent, ask if unclear
 - **Version display** is dynamic — `MP_VERSION` drives About panel AND splash screen automatically
 
 ---
 
 ## VERSIONING LOCATIONS (update all 3 every release)
-1. `const MP_VERSION = 'vX.X.X';` — in index.html (~line 7454)
-2. `const CACHE_NAME = 'tx-dom-vX.X.X';` — in sw.js (line 8)
-3. `<div ... id="aboutVersion">vX.X.X</div>` — in index.html (~line 1981)
+1. `const MP_VERSION = 'vX.X.X';` — in `assets/js/multiplayer.js` (line ~13)
+2. `const CACHE_NAME = 'tx-dom-vX.X.X';` — in `sw.js` (line 7)
+3. `<div ... id="aboutVersion">vX.X.X</div>` — in `index.html` (~line 1981)
 
 ---
 
@@ -116,6 +117,77 @@ These are not suggestions. They are hard rules for this project.
 - **Bug fixes: Just do it.** Don't ask permission for fixes — fix it, commit, and report what changed. If it breaks, we roll back.
 - **Always commit before and after changes** so every version is recoverable via git history.
 - **Keep the user focused.** User has ADHD — reel them back to the current task when they drift. State clearly what the next step is.
+- **Answer questions, then act.** If the user asks a question, answer it first. If they give an action, do the action. Don't conflate the two.
+
+---
+
+## TOKEN-EFFICIENCY RULES
+
+### Every session:
+1. **Read CLAUDE.md first** — don't re-discover what's already documented
+2. **Search, don't load** — use Grep/Glob to find specific lines; only Read the ranges you need. Never read a 12,000-line file to find one function.
+3. **Delegate exploration to subagents** — use Explore agents for broad searches, keep the main context lean
+4. **Plan before executing** — use plan mode for multi-step work so there are fewer fix-it cycles
+5. **Small commits, small tasks** — one focused chunk per conversation when possible
+6. **Update CLAUDE.md at session end** — if project state changed (version, file structure, new conventions), update this file so the next session starts clean
+
+### Optional (suggest when relevant):
+- If a task only touches one file, mention that Sonnet can handle it to save tokens
+- If exploring an unfamiliar area, suggest launching an Explore agent instead of reading everything inline
+
+---
+
+## FILE ARCHITECTURE (after module split)
+
+### Script loading order in index.html:
+```
+<script src="./assets/js/sfx.js" defer></script>         ← SFX needed at init
+<script src="./assets/js/game.js" defer></script>         ← core game engine
+<script src="./assets/js/multiplayer.js" defer></script>  ← MP protocol/WebSocket
+<script src="./assets/js/ai-engine.js" defer></script>    ← AI bidding + play
+<script src="./assets/js/mp-social.js" defer></script>    ← chat, rematch, no-table-talk
+<script src="./assets/js/orientation.js" defer></script>  ← orientation IIFE, style panels
+<script src="./assets/js/popup-config.js" defer></script> ← popup position config IIFE
+```
+
+### Lazy-loaded (on demand via `_lazyLoad()`):
+- `dev-tools.js` — dev mode toggle, custom hands, game logging, device presets
+- `monte-carlo.js` — Monte Carlo simulation modal
+- `observer.js` — observer/spectator mode
+- `replay.js` — save/load/replay system
+
+### File sizes (as of v13.5.1):
+| File | Lines | Description |
+|------|-------|-------------|
+| game.js | ~12,287 | Core engine, UI, scoring, game flow, settings handlers |
+| multiplayer.js | ~5,064 | WebSocket, MP protocol, room mgmt, bidding sync, reconnection |
+| orientation.js | ~2,407 | Orientation IIFE, domino style panel, shuffle settings, presets |
+| dev-tools.js | ~2,085 | Dev mode features (lazy-loaded) |
+| ai-engine.js | ~1,623 | AI bidding evaluation + tile play logic |
+| observer.js | ~724 | Observer/spectator mode (lazy-loaded) |
+| monte-carlo.js | ~648 | Monte Carlo simulation (lazy-loaded) |
+| replay.js | ~586 | Save/load/replay system (lazy-loaded) |
+| sfx.js | ~509 | Sound effects (Web Audio API) |
+| mp-social.js | ~447 | Chat, rematch voting, no-table-talk |
+| popup-config.js | ~320 | Popup positioning config IIFE |
+| **Total** | **~26,700** | |
+
+### Cross-file variable rules:
+- MP globals (`MULTIPLAYER_MODE`, `mpSeat`, `mpIsHost`, `mpPlayers`, `mpSocket`, etc.) are **declared in game.js** so they exist before multiplayer.js loads
+- `_staleRefreshCount` declared in game.js, used by both game.js and multiplayer.js
+- `getLocalSeat()` lives in game.js (serves all modes)
+- `SFX` object lives in sfx.js, must load before game.js
+- Lazy-loaded files override stub functions defined in game.js when they load
+
+### Lazy Load Pattern:
+```javascript
+function _lazyLoad(src, cb) {
+  if (document.querySelector('script[src="' + src + '"]')) { if(cb) cb(); return; }
+  var s = document.createElement('script');
+  s.src = src; s.onload = cb;
+  document.head.appendChild(s);
+}
+```
 
 ---
 
@@ -127,69 +199,17 @@ These are not suggestions. They are hard rules for this project.
 - When ready: replace compressed files with originals, no HTML changes needed
 - Status: **On hold**
 
-### JS Module Split (v14.0.0 candidate)
-- Split game.js (~27,000 lines) into ES Modules by feature section
-- Suggested sections: game-core, multiplayer, audio, ui, ai, moon-mode, scoring, settings
-- Requires adding import/export to all shared globals — major refactor
-- Benefits: smaller files, easier editing, significant token savings per session
-- Status: **On hold — tackle as v14.0.0 planned rewrite**
+### Further Module Extraction
+- game.js is still ~12,287 lines — potential further splits:
+  - Scoring/moon-mode logic
+  - UI/animation code
+  - Pass & Play mode
+- Would require careful dependency analysis
+- Status: **On hold — evaluate when needed**
 
 ---
 
-## CURRENT TASK: game.js Module Split (v13.4.0)
+## PENDING WORK
 
-### Audit Complete — here's what goes where:
-
-**MONTE CARLO → `assets/js/monte-carlo.js` (~740 lines)**
-- Lines 21632-22375 in game.js
-- ZERO external refs — completely self-contained IIFE
-- Triggered by #menuMonteCarlo click → mcOpenModal()
-- Status: READY TO EXTRACT
-
-**OBSERVER → `assets/js/observer.js` (~720 lines)**
-- Lines 8678-9397 in game.js
-- 4 functions called from outside: mpRequestRoomStatus(2), mpConnectAsObserver(1), mpHandleObserverMessage(1), mpShowObserverControls(1)
-- Need stub functions in game.js that lazy-load observer.js
-- Status: READY TO EXTRACT
-
-**REPLAY/SAVE-LOAD → `assets/js/replay.js` (~680 lines)**
-- Lines 19324-20005 in game.js
-- 8 functions called from outside: resumeGameFromSave(1), hasSavedGame(1), clearSavedGame(5), checkForSavedGame(1), autoSave(7), saveNotes(3), saveHandForReplay(1), replayHand(1)
-- autoSave and clearSavedGame are called frequently — need working stubs
-- Status: READY TO EXTRACT
-
-**DEV TOOLS → `assets/js/dev-tools.js` (lazy loaded on dev mode toggle)**
-- Custom hand system: lines 20005-20575 (~570 lines) — startCustomHand(1 ref outside)
-- Game logging: lines 20575-21445 (~870 lines) — logHandStart(4), logTrickStart(1), logPlay(1), logTrickEnd(1), logEvent(13!), loadGameLog(1) — need no-op stubs
-- Device presets DATA: lines 23641-24513 (~870 lines) — BUILTIN_DEVICE_PRESETS referenced 9 times but all within orientation panel
-- Status: READY TO EXTRACT (logging needs no-op stubs)
-
-**KEEP IN game.js (too intertwined):**
-- Orientation & Persistence IIFE (24513-26878) — sets essential window globals (BY2_*, FLIP_TRUMP_ENABLED)
-- Popup Config IIFE (26943-27259) — referenced from bid panel code
-- Lay Down Hand (1569-1938) — REAL GAME FEATURE not dev tool
-- Pass & Play (10124-10434, 21445-21632) — REAL GAME FEATURE
-- All core, AI, multiplayer, audio, UI code
-
-### Extraction Order:
-1. Monte Carlo (simplest, zero deps)
-2. Observer
-3. Replay
-4. Dev Tools (custom hands + logging + presets)
-
-### Lazy Load Pattern:
-```javascript
-function _lazyLoad(src, cb) {
-  if (document.querySelector('script[src="' + src + '"]')) { if(cb) cb(); return; }
-  var s = document.createElement('script');
-  s.src = src; s.onload = cb;
-  document.head.appendChild(s);
-}
-```
-Extracted files override stub functions when loaded. Auto-invoke if triggered by lazy load.
-
-### After Module Split:
-- Version bump to v13.4.0
-- Update sw.js cache list with new files
-- Update index.html if needed
-- Push to main, then gh-pages for testing
+- **Multiplayer extraction not yet committed** — extracted ~5,070 lines to multiplayer.js, tested clean home screen load, need full gameplay test before commit
+- **Full UI regression test needed** — click through all settings, game modes, bidding, gameplay after the module split

@@ -10983,6 +10983,7 @@ function startCustomHand() { _lazyLoad("./assets/js/dev-tools.js", function(){ s
 // Game logging stubs — no-op until dev-tools loaded
 var _gameLog = []; var _advLog = [];
 var handNumber = 0; var trickNumber = 0; var currentTrickPlays = [];
+var _gameLogTab = 'full'; var _advLogTab = 'full';
 function logHandStart() {}
 function logTrickStart() {}
 function logPlay() {}
@@ -10997,6 +10998,33 @@ function refreshGameLogContent() {}
 function refreshAdvLogContent() {}
 // Device presets stub
 var BUILTIN_DEVICE_PRESETS = {};
+
+// ─── Menu item click handlers that need dev-tools.js ───
+// These lazy-load dev-tools.js first, then open the panel.
+// Once dev-tools loads it re-attaches its own richer handlers.
+document.getElementById('menuGameLog').addEventListener('click', function() {
+  document.getElementById('settingsMenu').classList.remove('open');
+  _lazyLoad("./assets/js/dev-tools.js", function(){
+    refreshGameLogContent();
+    document.getElementById('gameLogBackdrop').style.display = 'flex';
+  });
+});
+
+document.getElementById('menuAdvancedLog').addEventListener('click', function() {
+  document.getElementById('settingsMenu').classList.remove('open');
+  _lazyLoad("./assets/js/dev-tools.js", function(){
+    refreshAdvLogContent();
+    document.getElementById('advLogBackdrop').style.display = 'flex';
+  });
+});
+
+// Close buttons — need to work even before dev-tools loads
+document.getElementById('gameLogCloseBtn').addEventListener('click', function() {
+  document.getElementById('gameLogBackdrop').style.display = 'none';
+});
+document.getElementById('advLogCloseBtn').addEventListener('click', function() {
+  document.getElementById('advLogBackdrop').style.display = 'none';
+});
 
 
 

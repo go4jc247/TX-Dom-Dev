@@ -351,9 +351,10 @@ document.getElementById('notesClearBtn').addEventListener('click', () => {
 /******************************************************************************
  * GAME LOG FUNCTIONALITY (v2.0 - Detailed Format)
  ******************************************************************************/
-let handNumber = 0;
-let trickNumber = 0;
-let currentTrickPlays = [];
+// handNumber, trickNumber, currentTrickPlays declared in game.js stubs
+handNumber = 0;
+trickNumber = 0;
+currentTrickPlays = [];
 
 // Helper functions
 function _tileStr(t){ return t ? `${t[0]}-${t[1]}` : null; }
@@ -1145,8 +1146,9 @@ function formatAdvancedLogCurrentHand(){
 }
 
 // Track which tab is active for each log
-let _gameLogTab = 'full';
-let _advLogTab = 'full';
+// _gameLogTab, _advLogTab declared in game.js stubs
+_gameLogTab = 'full';
+_advLogTab = 'full';
 
 function refreshGameLogContent(){
   const content = _gameLogTab === 'hand' ? formatGameLogCurrentHand() : (formatGameLog() || 'No log entries yet.');

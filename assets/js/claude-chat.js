@@ -6,7 +6,7 @@
   'use strict';
 
   const CC_WS_URL = 'wss://tn51-tx42-relay.onrender.com';
-  const CC_ROOM = 'ClaudeChatDirect';
+  const CC_ROOM = 'Moonroom005';
   const CC_ALLOWED_NAME = 'johnjohn';
   const CC_HEARTBEAT_MS = 15000;
 
@@ -83,7 +83,7 @@
     ccSocket.onmessage = function(event) {
       try {
         const msg = JSON.parse(event.data);
-        if (msg.type === 'chat' && msg.room === CC_ROOM) {
+        if (msg.type === 'chat') {
           const selfName = (typeof playerName !== 'undefined' && playerName) ? playerName : 'Player';
           const isSelf = msg.name && msg.name.toLowerCase() === selfName.toLowerCase();
           claudeChatAddMessage(msg.name || 'Unknown', msg.text || '', isSelf, false);

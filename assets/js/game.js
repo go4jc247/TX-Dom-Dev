@@ -3,7 +3,7 @@
 // Extracted from index.html v13.3.0
 // ============================================================
 
-const GAME_VERSION = 'v13.5.0'; // Update each release — used by splash & about screens
+const GAME_VERSION = 'v13.5.DEV'; // Update each release — used by splash & about screens
 
 // ============================================================
 // Lazy Load Helper — loads JS modules on demand
@@ -5081,6 +5081,8 @@ function aiWidowSwap(seat){
   }
   if(widowVal > worstVal){
     session.swapWidow(worstIdx);
+    rebuildHandSprites(seat);
+    syncSpritesWithGameState();
   } else {
     session.skipWidow();
   }
@@ -7617,6 +7619,56 @@ function flipTilesForTrump(){
     }
     requestAnimationFrame(animateFlips);
   }
+}
+
+// ═══ Rebuild hand sprites for a seat from current game state ═══
+// Used after widow swap (AI or MP guest) to sync sprites with hands[]
+function rebuildHandSprites(seat, excludeSprite){
+  var gameHand = session.game.hands[seat] || [];
+  var playerNum = seatToPlayer(seat);
+  var seatSprites = sprites[seat] || [];
+
+  // Remove old hand sprites
+  for(var si = 0; si < seatSprites.length; si++){
+    if(seatSprites[si] && seatSprites[si].sprite){
+      if(excludeSprite && seatSprites[si].sprite === excludeSprite) continue;
+      if(seatSprites[si].sprite._shadow) seatSprites[si].sprite._shadow.remove();
+      seatSprites[si].sprite.remove();
+    }
+  }
+
+  // Determine if this seat is the local player
+  var isLocal = (!MULTIPLAYER_MODE && !PASS_AND_PLAY_MODE && seat === 0) ||
+                (MULTIPLAYER_MODE && seat === mpSeat) ||
+                (PASS_AND_PLAY_MODE && ppIsHuman(seat));
+
+  // Create fresh sprites from current hand
+  var newSprites = [];
+  for(var hi = 0; hi < gameHand.length; hi++){
+    var gameTile = gameHand[hi];
+    if(!gameTile) continue;
+    var freshSprite = makeSprite(gameTile);
+    var slotPos = getHandPosition(playerNum, hi);
+    if(slotPos){
+      freshSprite.setPose(slotPos);
+      if(freshSprite._shadow) shadowLayer.appendChild(freshSprite._shadow);
+      spriteLayer.appendChild(freshSprite);
+      freshSprite.setFaceUp(isLocal);
+
+      // Click handlers only for local player
+      if(isLocal){
+        (function(spr){
+          spr.addEventListener('click', function(){ handlePlayer1Click(spr); });
+          spr.addEventListener('touchstart', function(e){
+            e.preventDefault(); e.stopPropagation();
+            handlePlayer1Click(spr);
+          }, { passive: false });
+        })(freshSprite);
+      }
+      newSprites[hi] = { sprite: freshSprite, tile: gameTile, originalSlot: hi };
+    }
+  }
+  sprites[seat] = newSprites;
 }
 
 function syncSpritesWithGameState(){
@@ -10554,6 +10606,10 @@ document.getElementById('menuAbout').addEventListener('click', () => {
   document.getElementById('settingsMenu').classList.remove('open');
   document.getElementById('aboutVersion').textContent = (typeof GAME_VERSION !== 'undefined') ? GAME_VERSION : (typeof MP_VERSION !== 'undefined') ? MP_VERSION : '';
   document.getElementById('aboutBackdrop').style.display = 'flex';
+});
+document.getElementById('menuClaudeChat').addEventListener('click', () => {
+  document.getElementById('settingsMenu').classList.remove('open');
+  claudeChatToggle();
 });
 document.getElementById('aboutCloseBtn').addEventListener('click', () => {
   document.getElementById('aboutBackdrop').style.display = 'none';
